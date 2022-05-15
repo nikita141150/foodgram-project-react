@@ -6,27 +6,12 @@ from .managers import UserManager
 
 
 class User(AbstractUser, PermissionsMixin):
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'password']
     email = models.EmailField(
         unique=True,
         max_length=254,
         verbose_name='Электронная почта'
-    )
-    username = models.CharField(
-        max_length=150,
-        unique=True,
-        verbose_name='Юзернейм'
-    )
-    first_name = models.CharField(
-        max_length=150,
-        verbose_name='Имя'
-    )
-    last_name = models.CharField(
-        max_length=150,
-        verbose_name='Фамилия'
-    )
-    password = models.CharField(
-        max_length=150,
-        verbose_name='Пароль'
     )
     is_subscribed = models.BooleanField(
         default=False,
@@ -34,8 +19,6 @@ class User(AbstractUser, PermissionsMixin):
     )
     is_superuser = models.BooleanField('Администратор', default=False)
     is_blocked = models.BooleanField('Заблокирован', default=False)
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'password']
 
     objects = UserManager()
 
@@ -59,7 +42,6 @@ class Follow(models.Model):
         related_name='follower',
         verbose_name='Подписчик'
     )
-    # пользователь на которого подписывются
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

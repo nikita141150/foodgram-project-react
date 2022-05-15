@@ -1,6 +1,5 @@
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -92,13 +91,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     def add_to_favorite(self, request, recipe):
-        try:
-            Favorite.objects.create(user=request.user, recipe=recipe)
-        except IntegrityError:
+        if Favorite.objects.filter(user=request.user, recipe=recipe).exists():
             return Response(
                 {'errors': 'Вы уже сделали подписку'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        Favorite.objects.create(user=request.user, recipe=recipe)
         serializer = RecipeShortReadSerializer(recipe)
         return Response(
             serializer.data,

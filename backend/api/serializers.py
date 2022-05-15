@@ -83,10 +83,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = (
-            'id', 'name', 'tags', 'author', 'ingredients', 'is_favorited',
-            'is_in_shopping_cart', 'image', 'text', 'cooking_time',
-        )
+        fields = '__all__'
 
     def get_ingredients(self, obj):
         queryset = IngredientAmount.objects.filter(recipe=obj)
@@ -104,13 +101,10 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
     def get_is_in_shopping_cart(self, obj):
         user = self.get_user()
-        try:
-            return (
+        return (
                 user.is_authenticated and
                 user.shopping_cart.recipes.filter(pk__in=(obj.pk,)).exists()
             )
-        except ShoppingCart.DoesNotExist:
-            return False
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):

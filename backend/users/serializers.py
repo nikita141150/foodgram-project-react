@@ -10,10 +10,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = (
-            'id', 'email', 'username', 'first_name', 'last_name', 'password',
-            'is_subscribed',
-        )
+        fields = '__all__'
         write_only_fields = ('password',)
         read_only_fields = ('id',)
         extra_kwargs = {
@@ -23,9 +20,10 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
-        if user.is_anonymous:
-            return False
-        return Follow.objects.filter(user=user, author=obj.id).exists()
+        return (
+            user.is_authenticated and
+            Follow.objects.filter(user=user, author=obj.id).exists()
+        )
 
     def create(self, validated_data):
         validated_data['password'] = (
@@ -52,8 +50,7 @@ class FollowSerializer(CustomUserSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'is_subscribed', 'recipes', 'recipes_count')
+        fields = '__all__'
 
     @staticmethod
     def get_recipes_count(obj):
