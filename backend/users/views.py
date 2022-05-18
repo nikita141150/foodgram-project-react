@@ -5,7 +5,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.views import APIView
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
-from djoser.views import TokenCreateView, UserViewSet
+from djoser.views import UserViewSet
 
 from .models import User, Follow
 from .serializers import CustomUserSerializer, FollowSerializer
@@ -19,16 +19,6 @@ class UsersViewSet(UserViewSet):
     pagination_class = LimitOffsetPagination
     permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = User.objects.all()
-
-
-class TokenCreateCheckBlock(TokenCreateView):
-    def _action(self, serializer):
-        if serializer.user.is_blocked:
-            return Response(
-                {'ERROR': USER_BLOCKED},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        return super()._action(serializer)
 
 
 class FollowViewSet(APIView):

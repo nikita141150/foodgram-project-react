@@ -5,8 +5,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
-      - .env
-
+      - ./.env
   backend:
     image: nikita141150/web:latest
     restart: always
@@ -16,7 +15,7 @@ services:
     depends_on:
       - db
     env_file:
-      - .env
+      - ./.env 
 
   frontend:
     image: nikita141150/frontend:latest
@@ -28,12 +27,14 @@ services:
   nginx:
     image: nginx:1.19.3
     ports:
-      - 80:80
+      - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
+      - ../docs/:/usr/share/nginx/html/api/docs/
       - static_value:/var/html/static/
       - media_value:/var/html/media/
+    restart: always
     depends_on:
       - frontend
 

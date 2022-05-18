@@ -10,6 +10,11 @@ class TagAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
+class IngredientsInline(admin.TabularInline):
+    model = Recipe.ingredients.through
+    extra = 1
+
+
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'measurement_unit')
@@ -25,6 +30,7 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ('author', 'name', 'tags')
     search_fields = ('name',)
     empty_value_display = '-пусто-'
+    inlines = (IngredientsInline,)
 
     @staticmethod
     def amount_favorites(obj):

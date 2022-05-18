@@ -57,6 +57,7 @@ class Recipe(models.Model):
     )
     ingredients = models.ManyToManyField(
         Ingredient,
+        through='IngredientAmount',
         verbose_name='Ингредиенты рецепта'
     )
     tags = models.ManyToManyField(
@@ -76,6 +77,11 @@ class Recipe(models.Model):
         validators=[MinValueValidator(1)],
         verbose_name='Время приготовления',
     )
+
+    class Meta:
+        verbose_name = 'Рецепт'
+        verbose_name_plural = 'Рецепты'
+        ordering = ('-name',)
 
 
 class IngredientAmount(models.Model):

@@ -8,12 +8,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = os.getenv('SECRET_KEY', default='p&l%385148kslh')
 
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = [
-    '84.201.165.103',
-    'localhost',
-]
+ALLOWED_HOSTS = ['*']
 
 
 INSTALLED_APPS = [
@@ -122,6 +119,7 @@ DJOSER = {
         "user_create": "users.serializers.CustomUserCreateSerializer",
         "user": "users.serializers.CustomUserSerializer",
         "current_user": "users.serializers.CustomUserSerializer",
+        "user_delete": "djoser.serializers.UserSerializer",
     },
     'PERMISSIONS': {
         'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],

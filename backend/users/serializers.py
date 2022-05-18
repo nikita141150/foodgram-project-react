@@ -1,11 +1,39 @@
-from django.contrib.auth.hashers import make_password
+from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
 from api.models import Recipe
 from .models import User, Follow
 
 
-class CustomUserSerializer(serializers.ModelSerializer):
+class CustomUserCreateSerializer(UserCreateSerializer):
+    """
+    Сериализатор для регистрации пользователя.
+    """
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'password'
+        )
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        user = User.objects.create(
+            email=validated_data['email'],
+            username=validated_data['username'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name']
+        )
+        user.set_password(validated_data['password'])
+        user.save()
+        return user
+
+
+class CustomUserSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -25,17 +53,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
             Follow.objects.filter(user=user, author=obj.id).exists()
         )
 
-    def create(self, validated_data):
-        validated_data['password'] = (
-            make_password(validated_data.pop('password'))
-        )
-        return super().create(validated_data)
-
 
 class ShortRecipeSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для краткого отображения сведений о рецепте
-    """
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
@@ -43,7 +62,7 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
 
 class FollowSerializer(CustomUserSerializer):
     """
-    Сериализатор для вывода подписок пользователя
+    Сериализатор для вывода подписок
     """
     recipes = serializers.SerializerMethodField(read_only=True)
     recipes_count = serializers.SerializerMethodField(read_only=True)
