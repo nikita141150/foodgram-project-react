@@ -28,7 +28,7 @@ class AddIngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = IngredientAmount
-        fields = ('id', 'amount')
+        fields = ('id', 'amount',)
 
 
 class Hex2NameColor(serializers.Field):
@@ -88,21 +88,18 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         queryset = IngredientAmount.objects.filter(recipe=obj)
         return IngredientAmountSerializer(queryset, many=True).data
 
-    def get_user(self):
-        return self.context['request'].user
-
     def get_is_favorited(self, obj):
-        user = self.get_user()
-        return (
-            user.is_authenticated
-            and user.favorites.filter(recipe=obj).exists()
-        )
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
+        return Favorite.objects.filter(user=request.user, recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.get_user()
-        return (user.is_authenticated
-                and user.shopping_cart.recipes.filter(
-                    pk__in=(obj.pk,)).exists())
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
+        return ShoppingCart.objects.filter(
+            user=request.user, recipe=obj).exists()
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
