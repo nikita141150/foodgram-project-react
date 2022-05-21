@@ -3,6 +3,8 @@ from django.urls import include, path
 
 from .views import IngredientViewSet, TagViewSet, RecipeViewSet
 
+app_name = 'api'
+
 v1_router = DefaultRouter()
 
 v1_router.register(
