@@ -25,8 +25,8 @@ from .serializers import (
     TagSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
-    RecipeShortReadSerializer,
     ShoppingCartSerializer,
+    FavoriteSerializer
 )
 from .permissions import IsAuthorOrAdminOrReadOnly
 
@@ -58,71 +58,32 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeReadSerializer
         return RecipeWriteSerializer
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+    @staticmethod
+    def post_method_for_actions(request, pk, serializers):
+        data = {'user': request.user.id, 'recipe': pk}
+        serializer = serializers(data=data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        serializer = RecipeReadSerializer(
-            instance=serializer.instance,
-            context={'request': self.request}
-        )
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(
-            instance, data=request.data, partial=partial
-        )
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        serializer = RecipeReadSerializer(
-            instance=serializer.instance,
-            context={'request': self.request},
-        )
-        return Response(
-            serializer.data, status=status.HTTP_200_OK
-        )
-
-    def add_to_favorite(self, request, recipe):
-        if Favorite.objects.filter(user=request.user, recipe=recipe).exists():
-            return Response(
-                {'errors': 'Вы уже сделали подписку'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        Favorite.objects.create(user=request.user, recipe=recipe)
-        serializer = RecipeShortReadSerializer(recipe)
-        return Response(
-            serializer.data,
-            status=status.HTTP_201_CREATED,
-        )
-
-    def delete_from_favorite(self, request, recipe):
-        favorite = Favorite.objects.filter(user=request.user, recipe=recipe)
-        if not favorite.exists():
-            return Response(
-                {'errors': 'Вы не делали подписку'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        favorite.delete()
+    @staticmethod
+    def delete_method_for_actions(request, pk, model):
+        user = request.user
+        recipe = get_object_or_404(Recipe, id=pk)
+        model_obj = get_object_or_404(model, user=user, recipe=recipe)
+        model_obj.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(
-        methods=('get', 'delete',),
-        detail=True,
-        permission_classes=(IsAuthenticated,)
-    )
-    def favorite(self, request, pk=None):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        if request.method == 'GET':
-            return self.add_to_favorite(request, recipe)
-        return self.delete_from_favorite(request, recipe)
+    @action(detail=True, methods=["POST"],
+            permission_classes=[IsAuthenticated])
+    def favorite(self, request, pk):
+        return self.post_method_for_actions(
+            request=request, pk=pk, serializers=FavoriteSerializer)
+
+    @favorite.mapping.delete
+    def delete_favorite(self, request, pk):
+        return self.delete_method_for_actions(
+            request=request, pk=pk, model=Favorite)
 
     @action(detail=True, methods=["POST"],
             permission_classes=[IsAuthenticated])
