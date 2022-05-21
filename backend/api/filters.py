@@ -1,7 +1,7 @@
 from django_filters.rest_framework import FilterSet, filters
 from rest_framework.filters import SearchFilter
 
-from .models import Recipe, ShoppingCart
+from .models import Recipe
 
 
 class IngredientFilter(SearchFilter):
@@ -9,33 +9,22 @@ class IngredientFilter(SearchFilter):
 
 
 class RecipeFilter(FilterSet):
-    is_favorited = filters.BooleanFilter(method='get_is_favorited')
-    is_in_shopping_cart = filters.BooleanFilter(
-        method='get_is_in_shopping_cart'
-    )
     tags = filters.AllValuesMultipleFilter(field_name='tags__slug')
+    is_favorited = filters.BooleanFilter(method='filter_is_favorited')
+    is_in_shopping_cart = filters.BooleanFilter(
+        method='filter_is_in_shopping_cart'
+    )
 
     class Meta:
         model = Recipe
-        fields = ('author',)
+        fields = ('tags', 'author', 'is_favorited', 'is_in_shopping_cart')
 
-    def get_is_favorited(self, queryset, name, value):
-        if not value:
-            return queryset
-        favorites = self.request.user.favorites.all()
-        return queryset.filter(
-            pk__in=(favorite.recipe.pk for favorite in favorites)
-        )
+    def filter_is_favorited(self, queryset, name, value):
+        if value:
+            return queryset.filter(favorites__user=self.request.user)
+        return queryset
 
-    def get_is_in_shopping_cart(self, queryset, name, value):
-        if not value:
-            return queryset
-        try:
-            recipes = (
-                self.request.user.shopping_cart.recipes.all()
-            )
-        except ShoppingCart.DoesNotExist:
-            return queryset
-        return queryset.filter(
-            pk__in=(recipe.pk for recipe in recipes)
-        )
+    def filter_is_in_shopping_cart(self, queryset, name, value):
+        if value:
+            return queryset.filter(carts__user=self.request.user)
+        return

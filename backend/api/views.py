@@ -31,17 +31,17 @@ from .serializers import (
 from .permissions import IsAuthorOrAdminOrReadOnly
 
 
-class IngredientViewSet(viewsets.ModelViewSet):
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
-    permission_classes = (permissions.AllowAny)
+    permission_classes = (permissions.AllowAny,)
     queryset = Ingredient.objects.all()
     filter_backends = (DjangoFilterBackend, IngredientFilter,)
     search_fields = ('^name',)
 
 
-class TagViewSet(viewsets.ModelViewSet):
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
-    permission_classes = (permissions.AllowAny)
+    permission_classes = (permissions.AllowAny,)
     queryset = Tag.objects.all()
 
 
