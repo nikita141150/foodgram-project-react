@@ -6,17 +6,17 @@ from .views import IngredientViewSet, TagViewSet, RecipeViewSet
 v1_router = DefaultRouter()
 
 v1_router.register(
-    'ingredients/',
+    'ingredients',
     IngredientViewSet,
     basename='ingredients'
 )
 v1_router.register(
-    'tags/',
+    'tags',
     TagViewSet,
     basename='tags'
 )
 v1_router.register(
-    'recipes/',
+    'recipes',
     RecipeViewSet,
     basename='recipes'
 )
