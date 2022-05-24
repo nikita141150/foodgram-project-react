@@ -1,16 +1,15 @@
 from rest_framework import serializers
 from drf_extra_fields.fields import Base64ImageField
-import webcolors
 
+from users.serializers import CustomUserSerializer
 from .models import (
     Ingredient,
     Tag,
     Recipe,
     IngredientAmount,
     Favorite,
-    ShoppingCart
+    ShoppingCart,
 )
-from users.serializers import CustomUserSerializer
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -20,9 +19,6 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class AddIngredientSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для добавления Ингредиентов
-    """
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     amount = serializers.IntegerField()
 
@@ -31,25 +27,10 @@ class AddIngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'amount',)
 
 
-class Hex2NameColor(serializers.Field):
-    def to_representation(self, value):
-        return value
-
-    def to_internal_value(self, data):
-        try:
-            data = webcolors.hex_to_name(data)
-        except ValueError:
-            raise serializers.ValidationError('Для этого цвета нет имени')
-        return data
-
-
 class TagSerializer(serializers.ModelSerializer):
-    color = Hex2NameColor()
-
     class Meta:
         model = Tag
         fields = '__all__'
-        read_only_fields = '__all__'
 
 
 class RecipeShortReadSerializer(serializers.ModelSerializer):
@@ -59,9 +40,6 @@ class RecipeShortReadSerializer(serializers.ModelSerializer):
 
 
 class IngredientAmountSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для вывода количества ингредиентов
-    """
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
@@ -104,8 +82,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(), many=True
-    )
+        queryset=Tag.objects.all(), many=True)
     ingredients = AddIngredientSerializer(many=True)
     author = CustomUserSerializer(read_only=True)
     image = Base64ImageField()

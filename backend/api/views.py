@@ -1,5 +1,5 @@
-from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -17,7 +17,7 @@ from .models import (
     Recipe,
     Favorite,
     IngredientAmount,
-    ShoppingCart
+    ShoppingCart,
 )
 from .filters import IngredientFilter, RecipeFilter
 from .serializers import (
@@ -25,8 +25,9 @@ from .serializers import (
     TagSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
+    FavoriteSerializer,
     ShoppingCartSerializer,
-    FavoriteSerializer
+
 )
 from .permissions import IsAuthorOrAdminOrReadOnly
 
@@ -35,14 +36,16 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
     permission_classes = (permissions.AllowAny,)
     queryset = Ingredient.objects.all()
-    filter_backends = (DjangoFilterBackend, IngredientFilter,)
+    filter_backends = (IngredientFilter,)
     search_fields = ('^name',)
+    pagination_class = None
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     permission_classes = (permissions.AllowAny,)
     queryset = Tag.objects.all()
+    pagination_class = None
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -51,10 +54,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     queryset = Recipe.objects.all()
-    http_method_names = ('get', 'post', 'put', 'patch', 'delete',)
 
     def get_serializer_class(self):
-        if self.request.method in SAFE_METHODS:
+        if self.action in ('list', 'retrieve'):
             return RecipeReadSerializer
         return RecipeWriteSerializer
 

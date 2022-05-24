@@ -1,5 +1,7 @@
+from colorfield.fields import ColorField
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.urls import reverse
 
 from users.models import User
 
@@ -33,10 +35,7 @@ class Tag(models.Model):
         db_index=True,
         verbose_name='Название'
     )
-    color = models.CharField(
-        max_length=50,
-        verbose_name='Цвет в HEX'
-    )
+    color = ColorField()
     slug = models.SlugField(
         max_length=200,
         unique=True,
@@ -61,10 +60,12 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(
         Ingredient,
         through='IngredientAmount',
+        related_name='recipes',
         verbose_name='Ингредиенты рецепта'
     )
     tags = models.ManyToManyField(
         Tag,
+        related_name='recipes',
         verbose_name='Теги рецепта'
     )
     image = models.CharField(
@@ -81,7 +82,7 @@ class Recipe(models.Model):
         verbose_name='Время приготовления',
     )
     pub_date = models.DateTimeField(
-        verbose_name='Дата публикации',
+        'Дата публикации',
         auto_now_add=True
     )
 
@@ -89,6 +90,9 @@ class Recipe(models.Model):
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
         ordering = ('-pub_date',)
+
+    def __str__(self):
+        return self.name
 
 
 class IngredientAmount(models.Model):
@@ -141,8 +145,11 @@ class Favorite(models.Model):
         verbose_name_plural = 'Избранные'
         constraints = [
             models.UniqueConstraint(fields=['user', 'recipe'],
-                                    name='unique favorite')
+                                    name='unique_user_recipe')
         ]
+
+    def __str__(self):
+        return f'{self.user} -> {self.recipe}'
 
 
 class ShoppingCart(models.Model):

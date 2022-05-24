@@ -1,7 +1,13 @@
 from django.contrib import admin
 
-from .models import (Favorite, Ingredient, IngredientAmount, Recipe,
-                     ShoppingCart, Tag)
+from .models import (
+    Favorite,
+    Ingredient,
+    IngredientAmount,
+    Recipe,
+    Tag,
+    ShoppingCart
+)
 
 
 @admin.register(Tag)
@@ -25,12 +31,12 @@ class IngredientAdmin(admin.ModelAdmin):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
+    inlines = (IngredientsInline,)
     list_display = ('id', 'name', 'author', 'amount_favorites',
                     'amount_tags', 'amount_ingredients')
     list_filter = ('author', 'name', 'tags')
     search_fields = ('name',)
     empty_value_display = '-пусто-'
-    inlines = (IngredientsInline,)
 
     @staticmethod
     def amount_favorites(obj):

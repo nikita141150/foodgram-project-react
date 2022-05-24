@@ -8,7 +8,6 @@ from .views import (
 )
 
 v1_router = DefaultRouter()
-
 v1_router.register(
     'users',
     UsersViewSet,
@@ -22,10 +21,11 @@ urlpatterns = [
         name="Мои подписки",
     ),
     path(
-        'users/<user_id>/subscribe/',
+        'users/<int:user_id>/subscribe/',
         FollowViewSet.as_view(),
         name="Подписка",
     ),
-    path('auth/', include('djoser.urls.authtoken')),
     path('', include(v1_router.urls)),
+    path('', include('djoser.urls')),
+    path('auth/', include('djoser.urls.authtoken')),
 ]

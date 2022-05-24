@@ -8,9 +8,12 @@ from rest_framework.permissions import (IsAuthenticated,
 from djoser.views import UserViewSet
 
 from .models import User, Follow
-from .serializers import CustomUserSerializer, FollowSerializer
+from .serializers import (
+    CustomUserSerializer,
+    FollowSerializer,
+)
 
-
+FILENAME = 'shopping_cart.txt'
 USER_BLOCKED = 'Пользователь заблокирован'
 
 

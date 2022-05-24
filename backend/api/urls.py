@@ -8,21 +8,20 @@ app_name = 'api'
 v1_router = DefaultRouter()
 
 v1_router.register(
-    r'ingredients',
+    'ingredients',
     IngredientViewSet,
     basename='ingredients'
 )
 v1_router.register(
-    r'tags',
+    'tags',
     TagViewSet,
     basename='tags'
 )
 v1_router.register(
-    r'recipes',
+    'recipes',
     RecipeViewSet,
     basename='recipes'
 )
-
 
 urlpatterns = [
     path('', include(v1_router.urls)),

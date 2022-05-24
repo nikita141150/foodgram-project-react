@@ -7,7 +7,7 @@ from .managers import UserManager
 
 class User(AbstractUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'password']
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
     email = models.EmailField(
         unique=True,
         max_length=254,
@@ -55,3 +55,6 @@ class Follow(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['user', 'author'], name='uniq')
         ]
+
+    def __str__(self):
+        return f'{self.user} --> {self.author}'
