@@ -68,9 +68,9 @@ class Recipe(models.Model):
         related_name='recipes',
         verbose_name='Теги рецепта'
     )
-    image = models.CharField(
-        max_length=200,
-        verbose_name='Изображение'
+    image = models.ImageField(
+        'Изображение',
+        upload_to='api/',
     )
     name = models.CharField(
         max_length=200,

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 
 from users.serializers import CustomUserSerializer
@@ -31,9 +32,17 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = '__all__'
+        extra_kwargs = {
+            'name': {'required': False}, 'color': {'required': False},
+            'slug': {'required': False}}
+
+    def to_internal_value(self, data):
+        return get_object_or_404(Tag, id=data)
 
 
 class RecipeShortReadSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
+
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time',)
