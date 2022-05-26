@@ -1,11 +1,11 @@
-from django.contrib.auth.models import (
-    AbstractUser, PermissionsMixin)
+from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.db.models.expressions import F
+from django.db.models.query_utils import Q
 
-from .managers import UserManager
 
-
-class User(AbstractUser, PermissionsMixin):
+class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
     email = models.EmailField(
@@ -13,48 +13,45 @@ class User(AbstractUser, PermissionsMixin):
         max_length=254,
         verbose_name='Электронная почта'
     )
-    is_subscribed = models.BooleanField(
-        default=False,
-        verbose_name='Подписка на данного пользователя'
-    )
-    is_superuser = models.BooleanField('Администратор', default=False)
-    is_blocked = models.BooleanField('Заблокирован', default=False)
-
-    objects = UserManager()
 
     class Meta:
-        ordering = ('-pk',)
+        ordering = ('-id',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
     def __str__(self):
         return self.username
 
-    @property
-    def is_staff(self):
-        return self.is_superuser
-
 
 class Follow(models.Model):
-    user = models.ForeignKey(
+    subscriber = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='follower',
+        related_name='authors',
         verbose_name='Подписчик'
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='following',
+        related_name='subscribers',
         verbose_name='Автор'
     )
 
+    def clean(self):
+        if self.subscriber == self.author:
+            raise ValidationError('Нельзя подписываться на себя')
+
     class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=('author', 'subscriber'),
+                name='unique_subscription'),
+            models.CheckConstraint(
+                check=~Q(subscriber=F('author')),
+                name='dont_subscribe_to_yourself'))
+        ordering = ('-id',)
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
-        constraints = [
-            models.UniqueConstraint(fields=['user', 'author'], name='uniq')
-        ]
 
     def __str__(self):
-        return f'{self.user} --> {self.author}'
+        return f'{self.subscriber} --> {self.author}'

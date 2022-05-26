@@ -8,7 +8,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = os.getenv('SECRET_KEY', default='p&l%385148kslh')
 
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -20,12 +20,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_filters',
-    'users',
-    'api',
     'rest_framework',
     'rest_framework.authtoken',
     'djoser',
+    'django_filters',
+    'users.apps.UsersConfig',
+    'api.apps.ApiConfig',
 ]
 
 MIDDLEWARE = [
@@ -96,31 +96,26 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
-    ],
-
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS':
-    'rest_framework.pagination.PageNumberPagination',
+    'api.pagination.PageLimitPagination',
     'PAGE_SIZE': 6,
 }
 
 DJOSER = {
-    "LOGIN_FIELD": 'email',
-    "SEND_ACTIVATION_EMAIL": False,
+    'LOGIN_FIELD': 'email',
     'HIDE_USERS': False,
+    'PERMISSIONS': {
+        'user': ('rest_framework.permissions.IsAuthenticated',),
+        'user_list': ('rest_framework.permissions.AllowAny',)
+    },
     "SERIALIZERS": {
-        "user_create": "users.serializers.CustomUserCreateSerializer",
         "user": "users.serializers.CustomUserSerializer",
         "current_user": "users.serializers.CustomUserSerializer",
-        "user_delete": "djoser.serializers.UserSerializer",
-    },
-    'PERMISSIONS': {
-        'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
-        'user_list': ['rest_framework.permissions.AllowAny']
     },
 }
 
@@ -141,4 +136,4 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+USE_X_FORWARDED_HOST = True

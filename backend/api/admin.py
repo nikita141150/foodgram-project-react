@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.db import models
+from django.forms import CheckboxSelectMultiple
 
 from .models import (
     Favorite,
@@ -6,19 +8,18 @@ from .models import (
     IngredientAmount,
     Recipe,
     Tag,
-    ShoppingCart
+    Cart
 )
 
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'slug')
-    empty_value_display = '-пусто-'
+    list_display = ('name', 'color', 'slug')
 
 
 class IngredientsInline(admin.TabularInline):
     model = Recipe.ingredients.through
-    extra = 1
+    raw_id_fields = ('ingredient',)
 
 
 @admin.register(Ingredient)
@@ -31,24 +32,15 @@ class IngredientAdmin(admin.ModelAdmin):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    inlines = (IngredientsInline,)
-    list_display = ('id', 'name', 'author', 'amount_favorites',
-                    'amount_tags', 'amount_ingredients')
+    list_display = ('name', 'author', 'number_favorites')
     list_filter = ('author', 'name', 'tags')
-    search_fields = ('name',)
-    empty_value_display = '-пусто-'
+    inlines = (IngredientsInline,)
+    formfield_overrides = {
+        models.ManyToManyField: {'widget': CheckboxSelectMultiple}}
 
-    @staticmethod
-    def amount_favorites(obj):
+    def number_favorites(self, obj):
         return obj.favorites.count()
-
-    @staticmethod
-    def amount_tags(obj):
-        return "\n".join([i[0] for i in obj.tags.values_list('name')])
-
-    @staticmethod
-    def amount_ingredients(obj):
-        return "\n".join([i[0] for i in obj.ingredients.values_list('name')])
+    number_favorites.short_description = 'Добавлений в избранное'
 
 
 @admin.register(IngredientAmount)
@@ -63,7 +55,7 @@ class FavoriteAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
-@admin.register(ShoppingCart)
-class ShoppingCartAdmin(admin.ModelAdmin):
+@admin.register(Cart)
+class CartAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'recipe')
     empty_value_display = '-пусто-'

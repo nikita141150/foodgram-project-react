@@ -1,82 +1,62 @@
-from djoser.serializers import UserCreateSerializer, UserSerializer
+from djoser.serializers import UserSerializer
 from rest_framework import serializers
+from drf_extra_fields.fields import Base64ImageField
 
 from api.models import Recipe
 from .models import User, Follow
 
 
-class CustomUserCreateSerializer(UserCreateSerializer):
+class CustomUserSerializer(UserSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'password'
-        )
-        extra_kwargs = {'password': {'write_only': True}}
-
-    def create(self, validated_data):
-        user = User.objects.create(
-            email=validated_data['email'],
-            username=validated_data['username'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name']
-        )
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
-
-
-class CustomUserSerializer(UserSerializer):
-    is_subscribed = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = User
-        fields = '__all__'
-        write_only_fields = ('password',)
-        read_only_fields = ('id',)
-        extra_kwargs = {
-            'password': {'write_only': True, 'required': True},
-            'is_subscribed': {'required': False},
-        }
+            'email', 'id', 'username', 'first_name', 'last_name',
+            'is_subscribed')
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
         return (
-            user.is_authenticated and Follow.objects.filter(
-                user=user, author=obj.id
-            ).exists()
-        )
+            user.is_authenticated
+            and user.authors.filter(author=obj).exists())
 
 
 class ShortRecipeSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
+
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
+        read_only_fields = ('id', 'name', 'image', 'cooking_time')
 
 
-class FollowSerializer(CustomUserSerializer):
-    """
-    Сериализатор для вывода подписок
-    """
-    recipes = serializers.SerializerMethodField(read_only=True)
-    recipes_count = serializers.SerializerMethodField(read_only=True)
+class FollowSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(source='author.id')
+    email = serializers.ReadOnlyField(source='author.email')
+    username = serializers.ReadOnlyField(source='author.username')
+    first_name = serializers.ReadOnlyField(source='author.first_name')
+    last_name = serializers.ReadOnlyField(source='author.last_name')
+    is_subscribed = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
 
     class Meta:
-        model = User
-        fields = '__all__'
+        model = Follow
+        fields = ('id', 'email', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'recipes', 'recipes_count')
 
-    @staticmethod
-    def get_recipes_count(obj):
-        return obj.recipes.count()
+    def get_is_subscribed(self, obj):
+        return Follow.objects.filter(
+            subscriber=obj.subscriber, author=obj.author).exists()
 
     def get_recipes(self, obj):
         request = self.context.get('request')
-        recipes = obj.recipes.all()
-        recipes_limit = request.query_params.get('recipes_limit')
-        if recipes_limit:
-            recipes = recipes[:int(recipes_limit)]
-        return ShortRecipeSerializer(recipes, many=True).data
+        limit = request.GET.get('recipes_limit')
+        queryset = Recipe.objects.filter(author=obj.author)
+        if limit:
+            queryset = queryset[:int(limit)]
+        return ShortRecipeSerializer(queryset, many=True).data
+
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(author=obj.author).count()

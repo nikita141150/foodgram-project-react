@@ -1,79 +1,61 @@
 from rest_framework import status
-from rest_framework.generics import ListAPIView, get_object_or_404
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.views import APIView
-from rest_framework.permissions import (IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from djoser.views import UserViewSet
 
 from .models import User, Follow
 from .serializers import (
-    CustomUserSerializer,
     FollowSerializer,
 )
 
-FILENAME = 'shopping_cart.txt'
-USER_BLOCKED = 'Пользователь заблокирован'
 
+class UserViewSet(UserViewSet):
 
-class UsersViewSet(UserViewSet):
-    serializer_class = CustomUserSerializer
-    pagination_class = LimitOffsetPagination
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    queryset = User.objects.all()
-
-
-class FollowViewSet(APIView):
-    serializer_class = FollowSerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = LimitOffsetPagination
-
-    def post(self, request, *args, **kwargs):
-        user_id = self.kwargs.get('user_id')
-        if user_id == request.user.id:
-            return Response(
-                {'error': 'Нельзя подписаться на себя'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if Follow.objects.filter(
-                user=request.user,
-                author_id=user_id
-        ).exists():
-            return Response(
-                {'error': 'Вы уже подписаны на пользователя'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        author = get_object_or_404(User, id=user_id)
-        Follow.objects.create(
-            user=request.user,
-            author_id=user_id
+    @action(detail=False, permission_classes=(IsAuthenticated,))
+    def subscriptions(self, request):
+        subscriber = request.user
+        queryset = Follow.objects.filter(subscriber=subscriber)
+        page = self.paginate_queryset(queryset)
+        serializer = FollowSerializer(
+            page,
+            many=True,
+            context={'request': request}
         )
-        return Response(
-            self.serializer_class(author, context={'request': request}).data,
-            status=status.HTTP_201_CREATED
-        )
+        return self.get_paginated_response(serializer.data)
 
-    def delete(self, request, *args, **kwargs):
-        user_id = self.kwargs.get('user_id')
-        get_object_or_404(User, id=user_id)
+    @action(
+        detail=True, methods=['post'], permission_classes=(IsAuthenticated,))
+    def subscribe(self, request, id=None):
+        subscriber = request.user
+        author = get_object_or_404(User, id=id)
+
+        if subscriber == author:
+            return Response({
+                'errors': 'Нельзя подписаться на себя'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        if subscriber.authors.filter(author=author).exists():
+            return Response({
+                'errors': 'Уже есть подпискa на этого пользователя'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        subscription = Follow.objects.create(
+            subscriber=subscriber, author=author)
+        serializer = FollowSerializer(
+            subscription, context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @subscribe.mapping.delete
+    def delete_subscribe(self, request, id=None):
+        subscriber = request.user
+        author = get_object_or_404(User, id=id)
         subscription = Follow.objects.filter(
-            user=request.user,
-            author_id=user_id
-        )
-        if subscription:
-            subscription.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(
-            {'error': 'Вы не подписаны на пользователя'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-
-class ListSubscriptions(ListAPIView):
-    serializer_class = FollowSerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = LimitOffsetPagination
-
-    def get_queryset(self):
-        return User.objects.filter(following__user=self.request.user)
+            subscriber=subscriber, author=author)
+        if not subscription.exists():
+            return Response(
+                {'errors': 'Нет такой подписки'},
+                status=status.HTTP_400_BAD_REQUEST)
+        subscription.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
