@@ -52,7 +52,7 @@ docker-compose exec backend python manage.py collectstatic --noinput
 [http://http://84.201.165.103/]
 ## Документация к API
 API документация доступна по ссылке (создана с помощью redoc):
-[http://http://84.201.165.103//api/docs/]
+[http://84.201.165.103//api/docs/]
 ## Авторы
 [Сорин Н.А.](https://github.com/nikita141150) - Python разработчик. Разработал бэкенд и деплой для сервиса Foodgram.  
 [Яндекс.Практикум](https://github.com/yandex-praktikum) Фронтенд для сервиса Foodgram.
